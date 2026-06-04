@@ -3,6 +3,15 @@ name: a-stock-data
 description: A股全栈数据工具包 — 覆盖行情(mootdx+腾讯+百度K线)、研报(东财+同花顺+iwencai)、信号(同花顺热点+北向+龙虎榜+解禁+行业)、资金面(融资融券+大宗交易+股东户数+分红+资金流分钟级+资金流120日)、新闻(东财个股+全球资讯)、基础数据(mootdx财务/F10+东财+新浪三表)、公告(巨潮)七层数据源，内嵌全部调用代码，自包含零依赖外部文件。优先用通达信(mootdx)/腾讯(不封IP)，东财接口已内置限流防封。适用于个股估值、研报检索、题材归因、龙虎榜跟踪、解禁预警、行业轮动、融资融券跟踪、筹码分析、产业链调研、批量筛选等场景。
 origin: custom
 version: 3.2.2
+triggers:
+  - 'a-stock-data'
+  - 'A股数据'
+  - 'A股行情'
+  - 'A股研报'
+  - 'A股资金流'
+  - 'A股公告'
+  - '龙虎榜'
+  - '融资融券'
 ---
 
 > 📦 项目主页：https://github.com/simonlin1212/a-stock-data — 更新、反馈、支持作者
@@ -414,10 +423,15 @@ def baidu_kline_with_ma(code: str, start_time: str = "") -> dict:
     }
     r = requests.get(url, params=params, headers=headers, timeout=10)
     d = r.json()
+    if d.get("ResultCode") not in (0, "0", None):
+        return {"keys": [], "rows": [], "error": d.get("ResultCode")}
     result = d.get("Result", {})
+    if not isinstance(result, dict):
+        return {"keys": [], "rows": [], "error": d.get("ResultCode")}
     md = result.get("newMarketData", {})
     keys = md.get("keys", [])  # includes: ma5avgprice, ma10avgprice, ma20avgprice
-    rows = md.get("marketData", "").split(";")
+    raw_rows = md.get("marketData", "")
+    rows = raw_rows.split(";") if isinstance(raw_rows, str) and raw_rows else []
     return {"keys": keys, "rows": rows}
 
 # 用法
@@ -960,6 +974,8 @@ def dragon_tiger_board(code: str, trade_date: str, look_back: int = 30) -> dict:
 
     # 2. 最近上榜的买卖席位
     seats = {"buy": [], "sell": []}
+    buy_data = []
+    sell_data = []
     if records:
         latest_date = records[0]["date"]
         # 买入席位
@@ -1089,38 +1105,65 @@ else:
 
 ```python
 import requests
+import pandas as pd
+from io import StringIO
 
 def industry_comparison(top_n: int = 20) -> dict:
     """
-    全行业涨跌幅排名（东财行业板块，~100 个行业）。
+    全行业涨跌幅排名（东财行业板块，~100 个行业；失败时 fallback 到同花顺 HTML）。
     返回: {top: [...], bottom: [...], total: int}
     """
-    url = "https://push2.eastmoney.com/api/qt/clist/get"
-    params = {
-        "pn": "1", "pz": "100", "po": "1", "np": "1",
-        "fltt": "2", "invt": "2",
-        "fs": "m:90+t:2",
-        "fields": "f2,f3,f4,f12,f13,f14,f104,f105,f128,f136,f140,f141,f207",
-    }
-    headers = {"User-Agent": UA}
-    r = em_get(url, params=params, headers=headers, timeout=15)
-    d = r.json()
-    items = d.get("data", {}).get("diff", [])
-    if not items:
-        return {"top": [], "bottom": [], "total": 0}
-
     rows = []
-    for i, item in enumerate(items):
-        rows.append({
-            "rank": i + 1,
-            "name": item.get("f14", ""),
-            "change_pct": item.get("f3", 0),
-            "code": item.get("f12", ""),
-            "up_count": item.get("f104", 0),
-            "down_count": item.get("f105", 0),
-            "leader": item.get("f140", ""),
-            "leader_change": item.get("f136", 0),
-        })
+    try:
+        url = "https://push2.eastmoney.com/api/qt/clist/get"
+        params = {
+            "pn": "1", "pz": "100", "po": "1", "np": "1",
+            "fltt": "2", "invt": "2",
+            "fs": "m:90+t:2",
+            "fields": "f2,f3,f4,f12,f13,f14,f104,f105,f128,f136,f140,f141,f207",
+        }
+        headers = {"User-Agent": UA}
+        r = em_get(url, params=params, headers=headers, timeout=15)
+        d = r.json()
+        items = d.get("data", {}).get("diff", [])
+        for i, item in enumerate(items):
+            rows.append({
+                "rank": i + 1,
+                "name": item.get("f14", ""),
+                "change_pct": item.get("f3", 0),
+                "code": item.get("f12", ""),
+                "up_count": item.get("f104", 0),
+                "down_count": item.get("f105", 0),
+                "leader": item.get("f140", ""),
+                "leader_change": item.get("f136", 0),
+            })
+    except Exception as e:
+        print(f"[WARN] 东财行业板块请求失败，尝试同花顺 fallback: {e}")
+
+    if not rows:
+        try:
+            url = "http://q.10jqka.com.cn/thshy/"
+            r = requests.get(url, headers={"User-Agent": UA}, timeout=15)
+            r.encoding = "gbk"
+            dfs = pd.read_html(StringIO(r.text))
+            if dfs:
+                df = dfs[0]
+                for _, row in df.iterrows():
+                    rows.append({
+                        "rank": int(row.iloc[0]),
+                        "name": row.iloc[1],
+                        "change_pct": row.iloc[2],
+                        "code": "",
+                        "up_count": row.iloc[6],
+                        "down_count": row.iloc[7],
+                        "leader": row.iloc[9],
+                        "leader_change": None,
+                    })
+        except Exception as e:
+            print(f"[WARN] 同花顺行业板块 fallback 失败: {e}")
+
+    if not rows:
+        return {"top": [], "bottom": [], "total": 0}
 
     return {
         "top": rows[:top_n],
@@ -1496,23 +1539,10 @@ import requests
 
 def cls_telegraph(page_size: int = 50) -> list[dict]:
     """
-    财联社电报（全市场实时快讯）。
-    返回: [{title, content, time}]
+    财联社旧公开接口已于 2026-05 下线。
+    兼容入口：直接返回空列表；全市场实时快讯请用 eastmoney_global_news()。
     """
-    url = "https://www.cls.cn/nodeapi/telegraphList"
-    params = {"rn": str(page_size), "page": "1"}
-    headers = {"User-Agent": UA, "Referer": "https://www.cls.cn/"}
-    r = requests.get(url, params=params, headers=headers, timeout=10)
-    d = r.json()
-
-    rows = []
-    for item in d.get("data", {}).get("roll_data", []):
-        rows.append({
-            "title": item.get("title", "") or item.get("brief", ""),
-            "content": item.get("content", "") or item.get("brief", ""),
-            "time": item.get("ctime", ""),
-        })
-    return rows
+    return []
 
 # 用法
 news = cls_telegraph()
