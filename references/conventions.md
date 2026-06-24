@@ -2,41 +2,21 @@
 
 ## 依赖
 
-```bash
-pip install mootdx requests pandas lxml stockstats
-```
-
 - `mootdx`：通达信 TCP 行情、财务快照、F10。
 - `requests`：所有 HTTP 数据源。
 - `pandas`：表格解析和 DataFrame 输出。
 - `lxml`：`pandas.read_html()` 解析同花顺一致预期表格。
 - `stockstats`：技术指标扩展，当前端点不强制使用。
 
-`iwencai` 语义研报搜索额外需要：
+`iwencai` 语义研报搜索额外需要 `IWENCAI_API_KEY`。其他数据源无需 key。
 
-```bash
-export IWENCAI_API_KEY="your_key_here"
-export IWENCAI_BASE_URL="https://openapi.iwencai.com"
-```
+具体安装、环境变量和调用示例见 `examples/usage.md`。
 
-其他数据源无需 key。
-
-## 代码格式
+## 调用约定
 
 所有脚本入口在 `scripts/a_stock_client.py`。优先执行脚本函数，不要把完整端点代码读入上下文。
 
-```python
-from scripts.a_stock_client import tencent_quote
-
-quote = tencent_quote(["600519"])
-```
-
-命令行入口：
-
-```bash
-python scripts/a_stock_client.py tencent_quote 600519
-python scripts/a_stock_client.py full_valuation 688017
-```
+命令行和 Python 代码示例统一放在 `examples/usage.md`，不要散落在 workflow 或 endpoint reference 中。
 
 ## Ticker 归一化
 

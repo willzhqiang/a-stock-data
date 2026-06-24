@@ -1,8 +1,8 @@
 ---
 name: a-stock-data
-description: A 股全栈数据工具包。用于实时行情、K线、估值、研报、一致预期、题材热点、概念板块、北向资金、资金流、龙虎榜、限售解禁、融资融券、大宗交易、股东户数、分红、新闻、基本面、财报三表和巨潮公告等 A 股数据任务。
+description: A 股数据查询与分析工具包。仅在用户明确需要 A 股行情、K线、研报、公告、资金流、估值、基本面或交易信号数据时使用；不用于泛泛投资聊天、港美股或非实时数据任务。
 origin: custom
-version: 4.0.1-local
+version: 4.0.2-local
 triggers:
   - 'a-stock-data'
   - 'A股数据'
@@ -55,43 +55,13 @@ triggers:
 | 多股票批量估值、横向对比、筛选 | `references/workflows-screening.md` |
 | 主题研报、产业链调研、题材归因 | `references/workflows-theme-research.md` |
 | 401、403、乱码、接口为空、财联社下线、东财防封 | `references/troubleshooting.md` |
+| 命令行和 Python 调用示例 | `examples/usage.md` |
 
 ## 脚本入口
 
-主要实现位于：
+主要实现位于 `scripts/a_stock_client.py`。
 
-```text
-scripts/a_stock_client.py
-```
-
-示例：
-
-```bash
-python scripts/a_stock_client.py tencent_quote 600519
-python scripts/a_stock_client.py eastmoney_industry_reports '*' --kwargs '{"max_pages": 1}'
-python scripts/a_stock_client.py full_valuation 688017
-```
-
-在 Python 中调用：
-
-```python
-from scripts.a_stock_client import tencent_quote, full_valuation
-
-quote = tencent_quote(["600519"])
-valuation = full_valuation("688017")
-```
-
-环境检查：
-
-```bash
-python scripts/validate_env.py
-```
-
-迁移完整性 smoke test：
-
-```bash
-python scripts/smoke_test_endpoints.py
-```
+环境检查、smoke test、命令行调用和 Python 调用示例见 `examples/usage.md`。
 
 ## 有效端点覆盖
 

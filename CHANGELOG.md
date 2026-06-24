@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.0.2-local — skill structure cleanup
+
+### 规范化
+- 收窄 `SKILL.md` frontmatter `description`，减少泛化触发。
+- `SKILL.md` 不再包含命令行或 Python 示例，只保留触发边界、路由、数据源优先级、脚本入口和输出契约。
+- 新增 `examples/usage.md`，集中存放安装验证、环境变量、命令行调用、Python 调用和 smoke test 示例。
+- `references/conventions.md` 移除代码块，只保留依赖、环境变量和调用约定说明，避免工作流程/约定文档与代码示例混在一起。
+
 ## v4.0.1-local — sync upstream v3.2.3/v3.2.4
 
 ### 新增

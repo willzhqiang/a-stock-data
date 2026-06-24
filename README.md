@@ -7,6 +7,7 @@ V4 起项目从“单文件内嵌全部代码”改造为“渐进式披露 Skil
 - `SKILL.md`：轻量路由器，只负责触发、路由和约束。
 - `scripts/a_stock_client.py`：所有端点实现和命令行入口。
 - `references/`：按需读取的端点说明、字段口径、估值公式、工作流和 FAQ。
+- `examples/`：可复制的命令行和 Python 调用示例。
 
 这样可以保留完整能力，同时避免任何 A 股问题都一次性加载 2000 行端点代码。
 
@@ -14,7 +15,7 @@ V4 起项目从“单文件内嵌全部代码”改造为“渐进式披露 Skil
 
 - V4.0.1-local 合并上游 v3.2.3/v3.2.4：新增东财行业研报 `eastmoney_industry_reports()`，并确认本地 `tdx_client()` 已覆盖 mootdx 0.11.x BESTIP 空串崩溃防护。
 - 行业研报与个股研报使用同一东财 `reportapi`，差异是 `qType=1`；支持全行业拉取或按东财行业码精确过滤，PDF 复用 `download_pdf()`。
-- 上游 Issue #29 / PR #22 讨论的“轻量 SKILL.md + references + scripts”方向，本 fork 已采用。
+- 上游 Issue #29 / PR #22 讨论的“轻量 SKILL.md + references + scripts/examples”方向，本 fork 已采用。
 
 ## 快速开始
 
@@ -155,6 +156,8 @@ a-stock-data/
 │   ├── a_stock_client.py
 │   ├── validate_env.py
 │   └── smoke_test_endpoints.py
+├── examples/
+│   └── usage.md
 ├── references/
 │   ├── conventions.md
 │   ├── endpoint-market.md
@@ -190,6 +193,7 @@ Since V4, this project uses a progressive-disclosure Skill package instead of a 
 - `SKILL.md`: lightweight router for activation, routing, source priority, and output contract.
 - `scripts/a_stock_client.py`: executable endpoint implementations and CLI entry point.
 - `references/`: on-demand endpoint notes, field definitions, valuation formulas, workflows, and FAQ.
+- `examples/`: copyable CLI and Python usage examples.
 
 Install the full directory rather than copying only `SKILL.md`.
 
