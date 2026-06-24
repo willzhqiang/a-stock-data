@@ -1,14 +1,20 @@
 # a-stock-data
 
-A 股全栈数据工具包：7 层架构、27 个有效端点、零第三方数据封装依赖。
+A 股全栈数据工具包：7 层架构、28 个有效端点、零第三方数据封装依赖。
 
-V4.0 起项目从“单文件内嵌全部代码”改造为“渐进式披露 Skill 包”：
+V4 起项目从“单文件内嵌全部代码”改造为“渐进式披露 Skill 包”：
 
 - `SKILL.md`：轻量路由器，只负责触发、路由和约束。
 - `scripts/a_stock_client.py`：所有端点实现和命令行入口。
 - `references/`：按需读取的端点说明、字段口径、估值公式、工作流和 FAQ。
 
-这样可以保留原有完整能力，同时避免任何 A 股问题都一次性加载 2000 行端点代码。
+这样可以保留完整能力，同时避免任何 A 股问题都一次性加载 2000 行端点代码。
+
+## 最新同步
+
+- V4.0.1-local 合并上游 v3.2.3/v3.2.4：新增东财行业研报 `eastmoney_industry_reports()`，并确认本地 `tdx_client()` 已覆盖 mootdx 0.11.x BESTIP 空串崩溃防护。
+- 行业研报与个股研报使用同一东财 `reportapi`，差异是 `qType=1`；支持全行业拉取或按东财行业码精确过滤，PDF 复用 `download_pdf()`。
+- 上游 Issue #29 / PR #22 讨论的“轻量 SKILL.md + references + scripts”方向，本 fork 已采用。
 
 ## 快速开始
 
@@ -39,6 +45,7 @@ python scripts/smoke_test_endpoints.py
 
 ```bash
 python scripts/a_stock_client.py tencent_quote 600519
+python scripts/a_stock_client.py eastmoney_industry_reports '*' --kwargs '{"max_pages": 1}'
 python scripts/a_stock_client.py full_valuation 688017
 ```
 
@@ -47,7 +54,7 @@ python scripts/a_stock_client.py full_valuation 688017
 ```text
 A 股全栈数据
 ├── 行情层      mootdx + 腾讯财经 + 百度K线
-├── 研报层      东财 reportapi + 东财 PDF + 同花顺 + iwencai
+├── 研报层      东财 reportapi 个股/行业研报 + 东财 PDF + 同花顺 + iwencai
 ├── 信号层      同花顺热点/北向 + 东财 slist 概念 + 东财资金流/龙虎榜/解禁/行业
 ├── 资金筹码层  东财 datacenter + push2his
 ├── 新闻层      东财个股新闻 + 东财全球资讯
@@ -61,7 +68,7 @@ A 股全栈数据
 2. 东财只用于独有数据。
 3. 所有东财请求统一经 `em_get()` 串行限流，批量任务调大 `EM_MIN_INTERVAL`。
 
-## 27 个有效端点
+## 28 个有效端点
 
 ### 行情层
 
@@ -75,8 +82,9 @@ A 股全栈数据
 
 | 端点 | 函数 | 数据 |
 |---|---|---|
-| 东财研报 | `eastmoney_reports` | 研报列表、评级、EPS 预测 |
-| 东财 PDF | `download_pdf` | 完整研报 PDF |
+| 东财个股研报 | `eastmoney_reports` | 个股研报列表、评级、EPS 预测 |
+| 东财行业研报 | `eastmoney_industry_reports` | 行业研报列表、行业名、行业码、评级 |
+| 东财 PDF | `download_pdf` | 个股/行业完整研报 PDF |
 | 同花顺一致预期 | `ths_eps_forecast` | 机构一致预期 EPS |
 | iwencai 搜索 | `iwencai_search` / `iwencai_query` | 自然语言主题研报检索 |
 
@@ -175,38 +183,21 @@ a-stock-data/
 
 # English
 
-Full-stack data toolkit for China A-share market: 7-layer architecture, 27 active endpoints, and zero third-party data wrapper dependency.
+Full-stack data toolkit for China A-share market: 7-layer architecture, 28 active endpoints, and zero third-party data wrapper dependency.
 
-Since V4.0, this project uses a progressive-disclosure Skill package instead of a monolithic Markdown file:
+Since V4, this project uses a progressive-disclosure Skill package instead of a monolithic Markdown file:
 
 - `SKILL.md`: lightweight router for activation, routing, source priority, and output contract.
 - `scripts/a_stock_client.py`: executable endpoint implementations and CLI entry point.
 - `references/`: on-demand endpoint notes, field definitions, valuation formulas, workflows, and FAQ.
 
-This keeps all original capabilities while avoiding loading thousands of lines of endpoint code for every A-share request.
-
-## Quick Start
-
-Install the whole Skill directory:
+Install the full directory rather than copying only `SKILL.md`.
 
 ```bash
-mkdir -p ~/.claude/skills
 git clone https://github.com/willzhqiang/a-stock-data ~/.claude/skills/a-stock-data
 cd ~/.claude/skills/a-stock-data
 pip install mootdx requests pandas lxml stockstats
-```
-
-Codex users should also install the full `a-stock-data/` directory instead of copying only `SKILL.md`.
-
-Environment check:
-
-```bash
 python scripts/validate_env.py
-```
-
-Migration smoke test:
-
-```bash
 python scripts/smoke_test_endpoints.py
 ```
 
@@ -214,108 +205,15 @@ Run endpoints:
 
 ```bash
 python scripts/a_stock_client.py tencent_quote 600519
+python scripts/a_stock_client.py eastmoney_industry_reports '*' --kwargs '{"max_pages": 1}'
 python scripts/a_stock_client.py full_valuation 688017
 ```
 
-## Architecture
+Key active endpoint groups:
 
-```text
-A-share full-stack data
-├── Market          mootdx + Tencent Finance + Baidu K-line
-├── Research        Eastmoney reportapi + Eastmoney PDF + THS + iwencai
-├── Signals         THS hot/northbound + Eastmoney slist concepts + Eastmoney flow/DTB/lockup/industry
-├── Capital/Chips   Eastmoney datacenter + push2his
-├── News            Eastmoney stock news + Eastmoney global news
-├── Fundamentals    mootdx + Eastmoney + Sina
-└── Announcements   cninfo + mootdx F10
-```
-
-Source priority:
-
-1. Prefer `mootdx` or Tencent whenever they cover the requested data.
-2. Use Eastmoney only for its exclusive data.
-3. Route all Eastmoney requests through `em_get()` with serial throttling. Increase `EM_MIN_INTERVAL` for batch jobs.
-
-## 27 Active Endpoints
-
-### Market
-
-| Endpoint | Function | Data |
-|---|---|---|
-| mootdx market data | `mootdx_bars` / `mootdx_quotes` / `mootdx_transactions` | K-lines, order book, transactions, quotes |
-| Tencent Finance | `tencent_quote` | PE/PB, market cap, turnover, limit prices, indices, ETFs |
-| Baidu K-line | `baidu_kline_with_ma` | Daily K-line, MA5, MA10, MA20 |
-
-### Research
-
-| Endpoint | Function | Data |
-|---|---|---|
-| Eastmoney reports | `eastmoney_reports` | Report list, ratings, EPS forecasts |
-| Eastmoney PDF | `download_pdf` | Full research report PDF |
-| THS consensus EPS | `ths_eps_forecast` | Institutional consensus EPS |
-| iwencai search | `iwencai_search` / `iwencai_query` | Natural-language thematic report search |
-
-### Signals
-
-| Endpoint | Function | Data |
-|---|---|---|
-| THS hot reasons | `ths_hot_reason` | Strong stocks and theme attribution |
-| Northbound realtime | `hsgt_realtime` | Shanghai/Shenzhen Connect minute-level flow |
-| Northbound cache | `_load_northbound_history` | Locally cached history |
-| Eastmoney concepts | `eastmoney_concept_blocks` | Industry, concept, and region board tags |
-| Minute fund flow | `eastmoney_fund_flow_minute` | Main, super-large, large, mid, small order flow |
-| Dragon-Tiger Board | `dragon_tiger_board` | Records, buy/sell brokerages, institutional activity |
-| Daily Dragon-Tiger Board | `daily_dragon_tiger` | Full-market daily list and net buy ranking |
-| Lockup expiry | `lockup_expiry` | Historical and upcoming lockup releases |
-| Industry ranking | `industry_comparison` | Industry change, up/down counts, leaders |
-
-### Capital / Chips
-
-| Endpoint | Function | Data |
-|---|---|---|
-| Margin trading | `margin_trading` | Margin balance, buy, repay, short balance |
-| Block trades | `block_trade` | Price, volume, buyer/seller, premium |
-| Shareholder count | `holder_num_change` | Holder count, QoQ change, average shares |
-| Dividends | `dividend_history` | Cash dividend, bonus shares, transfer shares |
-| 120-day fund flow | `stock_fund_flow_120d` | Daily main/large/mid/small order net inflow |
-
-### News
-
-| Endpoint | Function | Data |
-|---|---|---|
-| Stock news | `eastmoney_stock_news` | Eastmoney stock news |
-| Global news | `eastmoney_global_news` | Eastmoney 7x24 financial news |
-
-The old Cailianpress public API is offline. `cls_telegraph()` is kept only as a compatibility stub and returns an empty list; it is not counted as an active endpoint.
-
-### Fundamentals and Announcements
-
-| Endpoint | Function | Data |
-|---|---|---|
-| Quarterly snapshot | `mootdx_finance` | 37-field financial snapshot |
-| F10 company data | `mootdx_f10` / `mootdx_f10_section` | 9 categories of company text |
-| Eastmoney stock info | `eastmoney_stock_info` | Industry, shares, market cap, listing date |
-| Sina financial statements | `sina_financial_report` | Income statement, balance sheet, cash flow |
-| cninfo announcements | `cninfo_announcements` | Full announcements across Shanghai, Shenzhen, Beijing |
-
-## Valuation and Workflows
-
-Valuation helpers:
-
-- `forward_pe(price, eps_forecast)`
-- `pe_digestion(current_pe, cagr, target_pe=30)`
-- `calc_peg(pe, cagr)`
-- `full_valuation(code)`
-
-Workflow references:
-
-- `references/workflows-valuation.md`: single-stock valuation and quick target research.
-- `references/workflows-screening.md`: batch valuation and side-by-side comparison.
-- `references/workflows-theme-research.md`: thematic research, supply-chain research, and theme attribution.
-
-## Notes
-
-- Only iwencai requires `IWENCAI_API_KEY`.
-- Eastmoney has rate limits. Do not run batch jobs concurrently.
-- The old Cailianpress API is offline; use Eastmoney global news instead.
-- Always retrieve current quotes, flow, news, announcements, and reports live. Do not answer current market data from model memory.
+- Market: mootdx, Tencent Finance, Baidu K-line.
+- Research: Eastmoney stock reports, Eastmoney industry reports, Eastmoney PDF, THS consensus EPS, iwencai search.
+- Signals: THS hot/northbound, Eastmoney concepts, fund flow, Dragon-Tiger Board, lockup, industry ranking.
+- Capital/chips: margin trading, block trades, shareholder count, dividends, 120-day fund flow.
+- News: Eastmoney stock news and global news.
+- Fundamentals/announcements: mootdx F10/finance, Eastmoney stock info, Sina statements, cninfo announcements.

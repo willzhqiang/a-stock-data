@@ -2,7 +2,7 @@
 name: a-stock-data
 description: A 股全栈数据工具包。用于实时行情、K线、估值、研报、一致预期、题材热点、概念板块、北向资金、资金流、龙虎榜、限售解禁、融资融券、大宗交易、股东户数、分红、新闻、基本面、财报三表和巨潮公告等 A 股数据任务。
 origin: custom
-version: 4.0.0-local
+version: 4.0.1-local
 triggers:
   - 'a-stock-data'
   - 'A股数据'
@@ -32,7 +32,7 @@ triggers:
 
 - 通达信 `mootdx`：K线、五档、逐笔、财务快照、F10。
 - 腾讯财经：实时价、PE/PB、市值、换手率、涨跌停、指数、ETF。
-- 东财：只用于独有数据，如研报、资金流、龙虎榜、解禁、两融、大宗、股东户数、分红、个股新闻、全球资讯。
+- 东财：只用于独有数据，如个股研报、行业研报、资金流、龙虎榜、解禁、两融、大宗、股东户数、分红、个股新闻、全球资讯。
 
 所有东财请求必须经 `em_get()` 串行限流。批量任务调大 `EM_MIN_INTERVAL`，不要并发请求东财。
 
@@ -44,7 +44,7 @@ triggers:
 |---|---|
 | 依赖、ticker 归一化、数据源优先级、东财防封 | `references/conventions.md` |
 | 实时行情、K线、盘口、逐笔、PE/PB、市值、指数、ETF | `references/endpoint-market.md` |
-| 研报列表、PDF、一致预期 EPS、iwencai 语义搜索 | `references/endpoint-research.md` |
+| 个股研报、行业研报、PDF、一致预期 EPS、iwencai 语义搜索 | `references/endpoint-research.md` |
 | 热点题材、北向、概念、分钟资金流、龙虎榜、解禁、行业轮动 | `references/endpoint-signals.md` |
 | 融资融券、大宗交易、股东户数、分红、120 日资金流 | `references/endpoint-capital-chip.md` |
 | 个股新闻、全市场 7x24 快讯、财联社下线替代 | `references/endpoint-news.md` |
@@ -68,6 +68,7 @@ scripts/a_stock_client.py
 
 ```bash
 python scripts/a_stock_client.py tencent_quote 600519
+python scripts/a_stock_client.py eastmoney_industry_reports '*' --kwargs '{"max_pages": 1}'
 python scripts/a_stock_client.py full_valuation 688017
 ```
 
@@ -94,12 +95,12 @@ python scripts/smoke_test_endpoints.py
 
 ## 有效端点覆盖
 
-当前有效能力为 27 个端点。财联社旧 API 已下线，不计入有效端点；`cls_telegraph()` 仅保留兼容入口，默认返回空列表，使用 `eastmoney_global_news()` 替代。
+当前有效能力为 28 个端点。财联社旧 API 已下线，不计入有效端点；`cls_telegraph()` 仅保留兼容入口，默认返回空列表，使用 `eastmoney_global_news()` 替代。
 
 端点分布：
 
 - 行情层：mootdx 行情、腾讯财经、百度 K线。
-- 研报层：东财研报、东财 PDF、同花顺一致预期、iwencai 搜索。
+- 研报层：东财个股研报、东财行业研报、东财 PDF、同花顺一致预期、iwencai 搜索。
 - 信号层：同花顺热点、北向实时、北向历史缓存、东财 slist 概念板块、东财分钟资金流、龙虎榜、全市场龙虎榜、限售解禁、行业排名。
 - 资金面/筹码层：融资融券、大宗交易、股东户数、分红送转、120 日资金流。
 - 新闻层：东财个股新闻、东财全球资讯。

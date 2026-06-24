@@ -228,6 +228,43 @@ def eastmoney_reports(code: str, max_pages: int = 5) -> list[dict]:
             break
     return all_records
 
+
+def eastmoney_industry_reports(
+    industry_code: str = "*",
+    max_pages: int = 5,
+    begin: str = "2024-01-01",
+) -> list[dict]:
+    """拉取东财行业研报列表。
+
+    industry_code="*" 表示全行业；传东财行业码如 "1238" 可精确过滤。
+    行业名和行业码在 record 的 industryName / industryCode 字段中。
+    """
+    all_records = []
+    for page in range(1, max_pages + 1):
+        params = {
+            "industryCode": industry_code, "pageSize": "100", "industry": "*",
+            "rating": "*", "ratingChange": "*",
+            "beginTime": begin, "endTime": "2030-01-01",
+            "pageNo": str(page), "fields": "", "qType": "1",
+            "orgCode": "", "code": "", "rcode": "",
+            "p": str(page), "pageNum": str(page), "pageNumber": str(page),
+        }
+        r = em_get(
+            REPORT_API,
+            params=params,
+            headers={"Referer": "https://data.eastmoney.com/"},
+            timeout=30,
+        )
+        d = r.json()
+        rows = d.get("data") or []
+        if not rows:
+            break
+        all_records.extend(rows)
+        if page >= (d.get("TotalPage", 1) or 1):
+            break
+    return all_records
+
+
 def download_pdf(record: dict, target_dir: str = "./reports") -> str | None:
     """下载单份研报PDF，返回保存路径或None"""
     info_code = record.get("infoCode", "")
